@@ -6,7 +6,7 @@ Generate encode and decode methods for your structs to avoid using reflection wi
 
 1. Install the code generation tool:
    ```sh
-   go install github.com/Nyarum/diho_bytes_generate/cmd/diho_bytes_generate
+   go install github.com/Nyarum/bytespack/cmd/diho_bytes_generate
    ```
 
 2. Add a `go:generate` comment to your struct definition:
