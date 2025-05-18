@@ -1,321 +1,110 @@
-## Code Generation for Encode/Decode Methods of binary protocol
+# BytesPack
 
-Generate encode and decode methods for your structs to avoid using reflection with custom binary protocols.
+[![Go Version](https://img.shields.io/github/go-mod/go-version/Nyarum/bytespack)](https://golang.org/dl/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-### How to Use
+BytesPack is a powerful Go code generation tool that automatically generates encode/decode methods for your structs to handle binary protocols without using reflection. This makes binary protocol handling both faster and safer.
 
-1. Install the code generation tool:
-   ```sh
-   go install github.com/Nyarum/bytespack/cmd/diho_bytes_generate
-   ```
+## Features
 
-2. Add a `go:generate` comment to your struct definition:
-   ```go
-   //go:generate diho_bytes_generate packet.go
-    type Header struct {
-        Pass uint8
-    }
+- 🚀 Zero reflection for better performance
+- 🛠 Automatic code generation for encode/decode methods
+- 💪 Support for various Go types including:
+  - Basic types (uint8/16/32/64, int8/16/32/64)
+  - Strings with null termination
+  - Byte slices
+  - Arrays and slices
+  - Nested structs
+- 🔧 Custom endianness support via struct tags
+- 🎯 Field filtering capabilities
+- 📦 Uses efficient byte buffer pool for better memory management
 
-    type InternalStruct struct {
-        Test uint16
-    }
+## Installation
 
-    //go:generate diho_bytes_generate packet.go
-    type Packet struct {
-        Header          `dbg:"ignore"`
-        ID              uint16
-        Name            string
-        Level           uint32
-        Health          uint8
-        Mana            uint16
-        Bro             int8
-        Bro2            int16
-        Bro3            int32
-        Bro4            int64
-        BytesField      []byte
-        InternalStruct  InternalStruct
-        ArrayTest       [5]uint16
-        SliceTest       []uint16
-        InternalStructs [2]InternalStruct
-    }
+```bash
+go install github.com/Nyarum/bytespack/cmd/diho_bytes_generate@latest
+```
 
-    func (p *Packet) Filter(ctx context.Context) bool {
-        return false
-    }
-   ```
+## Quick Start
 
-3. Run the `go generate` command in your terminal:
-   ```sh
-   go generate ./...
-   ```
-
-This will produce the generated code in the same folder as your struct.
-
-### Example of Generated Code
-
-The generated code (for decode one) will look something like this:
+1. Define your struct with the `go:generate` directive:
 
 ```go
-func (p *Header) Decode(ctx context.Context, buf []byte, endian binary.ByteOrder) error {
-	var err error
-	reader := bytes.NewReader(buf)
-	err = binary.Read(reader, endian, &p.Pass)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-func (p *InternalStruct) Decode(ctx context.Context, buf []byte, endian binary.ByteOrder) error {
-	var err error
-	reader := bytes.NewReader(buf)
-	err = binary.Read(reader, endian, &p.Test)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-func (p *Packet) Decode(ctx context.Context, buf []byte, endian binary.ByteOrder) error {
-	var err error
-	reader := bytes.NewReader(buf)
-	err = binary.Read(reader, endian, &p.ID)
-	if err != nil {
-		return err
-	}
-	if p.Filter(ctx) == true {
-		return err
-	}
-	p.Name, err = utils.ReadStringNull(reader)
-	if err != nil {
-		return err
-	}
-	if p.Filter(ctx) == true {
-		return err
-	}
-	err = binary.Read(reader, endian, &p.Level)
-	if err != nil {
-		return err
-	}
-	if p.Filter(ctx) == true {
-		return err
-	}
-	err = binary.Read(reader, endian, &p.Health)
-	if err != nil {
-		return err
-	}
-	if p.Filter(ctx) == true {
-		return err
-	}
-	err = binary.Read(reader, endian, &p.Mana)
-	if err != nil {
-		return err
-	}
-	if p.Filter(ctx) == true {
-		return err
-	}
-	err = binary.Read(reader, endian, &p.Bro)
-	if err != nil {
-		return err
-	}
-	if p.Filter(ctx) == true {
-		return err
-	}
-	err = binary.Read(reader, endian, &p.Bro2)
-	if err != nil {
-		return err
-	}
-	if p.Filter(ctx) == true {
-		return err
-	}
-	err = binary.Read(reader, endian, &p.Bro3)
-	if err != nil {
-		return err
-	}
-	if p.Filter(ctx) == true {
-		return err
-	}
-	err = binary.Read(reader, endian, &p.Bro4)
-	if err != nil {
-		return err
-	}
-	if p.Filter(ctx) == true {
-		return err
-	}
-	p.BytesField, err = utils.ReadBytes(reader)
-	if err != nil {
-		return err
-	}
-	if p.Filter(ctx) == true {
-		return err
-	}
-	if err = (&p.InternalStruct).Decode(ctx, buf, endian); err != nil {
-		return err
-	}
-	if p.Filter(ctx) == true {
-		return err
-	}
-	for k := range p.ArrayTest {
-		var tempValue uint16
-		if err = binary.Read(reader, endian, &tempValue); err != nil {
-			return err
-		}
-		p.ArrayTest[k] = tempValue
-	}
-	if p.Filter(ctx) == true {
-		return err
-	}
-	for k := range p.SliceTest {
-		var tempValue uint16
-		if err = binary.Read(reader, endian, &tempValue); err != nil {
-			return err
-		}
-		p.SliceTest[k] = tempValue
-	}
-	if p.Filter(ctx) == true {
-		return err
-	}
-	for k := range p.InternalStructs {
-		if err = (&p.InternalStructs[k]).Decode(ctx, buf, endian); err != nil {
-			return err
-		}
-	}
-	if p.Filter(ctx) == true {
-		return err
-	}
-	return nil
+//go:generate diho_bytes_generate packet.go
+type Packet struct {
+    ID     uint16
+    Name   string
+    Level  uint32
+    Health uint8
 }
 ```
 
-The generated code (for encode one) will look something like this:
+2. Run the code generation:
+
+```bash
+go generate ./...
+```
+
+This will create two files:
+- `packet_encode.gen.go`: Contains the encoding logic
+- `packet_decode.gen.go`: Contains the decoding logic
+
+## Advanced Usage
+
+### Struct Tags
+
+BytesPack supports custom behavior through struct tags:
+
+- `dbg:"ignore"` - Skip this field during encoding/decoding
+- `dbg:"little"` - Use little-endian encoding for this field
+- `dbg:"fieldName==value"` - Conditional encoding/decoding based on other field values
+
+Example:
 
 ```go
-func (p *Header) Encode(ctx context.Context, endian binary.ByteOrder) ([]byte, error) {
-	newBuf := bytebufferpool.Get()
-	defer bytebufferpool.Put(newBuf)
-	var err error
-	err = binary.Write(newBuf, endian, p.Pass)
-	if err != nil {
-		return nil, err
-	}
-	return utils.Clone(newBuf), nil
-}
-func (p *InternalStruct) Encode(ctx context.Context, endian binary.ByteOrder) ([]byte, error) {
-	newBuf := bytebufferpool.Get()
-	defer bytebufferpool.Put(newBuf)
-	var err error
-	err = binary.Write(newBuf, endian, p.Test)
-	if err != nil {
-		return nil, err
-	}
-	return utils.Clone(newBuf), nil
-}
-func (p *Packet) Encode(ctx context.Context, endian binary.ByteOrder) ([]byte, error) {
-	newBuf := bytebufferpool.Get()
-	defer bytebufferpool.Put(newBuf)
-	var err error
-	err = binary.Write(newBuf, endian, p.ID)
-	if err != nil {
-		return nil, err
-	}
-	if p.Filter(ctx) == true {
-		return utils.Clone(newBuf), nil
-	}
-	err = utils.WriteStringNull(newBuf, p.Name)
-	if err != nil {
-		return nil, err
-	}
-	if p.Filter(ctx) == true {
-		return utils.Clone(newBuf), nil
-	}
-	err = binary.Write(newBuf, endian, p.Level)
-	if err != nil {
-		return nil, err
-	}
-	if p.Filter(ctx) == true {
-		return utils.Clone(newBuf), nil
-	}
-	err = binary.Write(newBuf, endian, p.Health)
-	if err != nil {
-		return nil, err
-	}
-	if p.Filter(ctx) == true {
-		return utils.Clone(newBuf), nil
-	}
-	err = binary.Write(newBuf, endian, p.Mana)
-	if err != nil {
-		return nil, err
-	}
-	if p.Filter(ctx) == true {
-		return utils.Clone(newBuf), nil
-	}
-	err = binary.Write(newBuf, endian, p.Bro)
-	if err != nil {
-		return nil, err
-	}
-	if p.Filter(ctx) == true {
-		return utils.Clone(newBuf), nil
-	}
-	err = binary.Write(newBuf, endian, p.Bro2)
-	if err != nil {
-		return nil, err
-	}
-	if p.Filter(ctx) == true {
-		return utils.Clone(newBuf), nil
-	}
-	err = binary.Write(newBuf, endian, p.Bro3)
-	if err != nil {
-		return nil, err
-	}
-	if p.Filter(ctx) == true {
-		return utils.Clone(newBuf), nil
-	}
-	err = binary.Write(newBuf, endian, p.Bro4)
-	if err != nil {
-		return nil, err
-	}
-	if p.Filter(ctx) == true {
-		return utils.Clone(newBuf), nil
-	}
-	err = utils.WriteBytes(newBuf, p.BytesField)
-	if err != nil {
-		return nil, err
-	}
-	if p.Filter(ctx) == true {
-		return utils.Clone(newBuf), nil
-	}
-	if encodeBuf, err := p.InternalStruct.Encode(ctx, endian); err != nil {
-		return nil, err
-	} else {
-		newBuf.Write(encodeBuf)
-	}
-	if p.Filter(ctx) == true {
-		return utils.Clone(newBuf), nil
-	}
-	for _, v := range p.ArrayTest {
-		if err = binary.Write(newBuf, endian, v); err != nil {
-			return nil, err
-		}
-	}
-	if p.Filter(ctx) == true {
-		return utils.Clone(newBuf), nil
-	}
-	for _, v := range p.SliceTest {
-		if err = binary.Write(newBuf, endian, v); err != nil {
-			return nil, err
-		}
-	}
-	if p.Filter(ctx) == true {
-		return utils.Clone(newBuf), nil
-	}
-	for _, v := range p.InternalStructs {
-		if encodeBuf, err := v.Encode(ctx, endian); err != nil {
-			return nil, err
-		} else {
-			newBuf.Write(encodeBuf)
-		}
-	}
-	if p.Filter(ctx) == true {
-		return utils.Clone(newBuf), nil
-	}
-	return utils.Clone(newBuf), nil
+type Packet struct {
+    Header        `dbg:"ignore,little"`
+    ID            uint16
+    OptionalField uint32 `dbg:"ID==1"` // Only encoded/decoded if ID equals 1
 }
 ```
+
+### Custom Filtering
+
+You can implement custom filtering logic by adding a Filter method to your struct:
+
+```go
+func (p *Packet) Filter(ctx context.Context, fieldName string) bool {
+    // Return true to skip encoding/decoding of the current field
+    return false
+}
+```
+
+## Project Structure
+
+```
+bytespack/
+├── cmd/
+│   └── diho_bytes_generate/    # Code generation tool
+├── customtypes/               # Custom type definitions
+├── example/                   # Usage examples
+├── generate/                  # Code generation logic
+├── parse/                     # Struct parsing logic
+└── utils/                     # Utility functions
+```
+
+## Performance
+
+BytesPack generates code that:
+- Avoids reflection completely
+- Uses efficient byte buffer pooling
+- Minimizes allocations
+- Provides predictable performance
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
